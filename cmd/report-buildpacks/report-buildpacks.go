@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"strconv"
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/olekukonko/tablewriter"
@@ -98,6 +99,9 @@ type resource struct {
 		AppsURL            string    `json:"apps_url"`                // space
 		BuildpackGUID      string    `json:"detected_buildpack_guid"` // app
 		Buildpack          string    `json:"buildpack"`               // app
+		Memory			   int64       `json:"memory"`     	          // app
+		Instances		   int64       `json:"instances"`     	       // app
+
 		Admin              bool      // user
 		Username           string    // user
 		Filename           string    `json:"filename"`           // buildpack
@@ -186,6 +190,7 @@ type buildpackUsageInfo struct {
 	Space        string   `json:"space"`
 	Application  string   `json:"application"`
 	Buildpacks   []string `json:"buildpacks,omitempty"`
+	TotalMemory  string  `json:"total_memory,omitempty"`	
 	Messages     []string `json:"messages,omitempty"`
 }
 
@@ -218,6 +223,7 @@ func (c *reportBuildpacks) reportBuildpacks(client *simpleClient, out io.Writer,
 					}
 					for _, bp := range dropletAnswer.Buildpacks {
 						if bp.Version == "" {
+							bps = append(bps, fmt.Sprintf("%s", bp.BuildpackName))
 							messages = append(messages, "needs attention (3)")
 						} else {
 							bps = append(bps, fmt.Sprintf("%s v%s", bp.BuildpackName, bp.Version))
@@ -248,6 +254,7 @@ func (c *reportBuildpacks) reportBuildpacks(client *simpleClient, out io.Writer,
 					Space:        space.Entity.Name,
 					Application:  app.Entity.Name,
 					Buildpacks:   bps,
+					TotalMemory:   strconv.FormatInt (    app.Entity.Memory * app.Entity.Instances, 10 ),					
 					Messages:     messages,
 				})
 
@@ -264,13 +271,14 @@ func (c *reportBuildpacks) reportBuildpacks(client *simpleClient, out io.Writer,
 	}
 
 	table := tablewriter.NewWriter(out)
-	table.SetHeader([]string{"Organization", "Space", "Application", "Buildpacks", "Messages"})
+	table.SetHeader([]string{"Organization", "Space", "Application", "Buildpacks", "Total Memory", "Messages"})
 	for _, row := range allInfo {
 		table.Append([]string{
 			row.Organization,
 			row.Space,
 			row.Application,
 			strings.Join(row.Buildpacks, ", "),
+			row.TotalMemory,
 			strings.Join(row.Messages, ", "),
 		})
 	}
