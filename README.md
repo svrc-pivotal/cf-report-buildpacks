@@ -1,5 +1,16 @@
 # cf-report-buildpacks
 
+
+Running a memory report for all java apps:
+
+```bash
+
+cf report-buildpacks -output-json > report.json
+
+cat report.json | jq '[.[] | select (select (.buildpacks != null) | .buildpacks[] | contains("java")).total_memory | tonumber ] | reduce .[] as $num (0; .+$num) '
+
+```
+
 CloudFoundry CLI plugin to find out of date buildpacks in a CloudFoundry installation
 
 ## Install from binary
