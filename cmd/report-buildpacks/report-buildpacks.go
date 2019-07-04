@@ -97,7 +97,7 @@ type resource struct {
 		AuditorsURL        string    `json:"auditors_url"`            // org, space
 		DevelopersURL      string    `json:"developers_url"`          // space
 		AppsURL            string    `json:"apps_url"`                // space
-		BuildpackGUID      string    `json:"detected_buildpack_guid"` // app
+		DetectedBuildpack  string    `json:"detected_buildpack"`      // app
 		Buildpack          string    `json:"buildpack"`               // app
 		Memory			   int64       `json:"memory"`     	          // app
 		Instances		   int64       `json:"instances"`     	       // app
@@ -222,11 +222,13 @@ func (c *reportBuildpacks) reportBuildpacks(client *simpleClient, out io.Writer,
 						messages = append(messages, "needs attention (2)")
 					}
 					for _, bp := range dropletAnswer.Buildpacks {
+						bps = append(bps, fmt.Sprintf("%s", bp.Name))
 						if bp.Version == "" {
 							bps = append(bps, fmt.Sprintf("%s", bp.BuildpackName))
 							messages = append(messages, "needs attention (3)")
 						} else {
 							bps = append(bps, fmt.Sprintf("%s v%s", bp.BuildpackName, bp.Version))
+							
 							bpr, found := buildpacks[bp.Name]
 							if !found {
 								messages = append(messages, "needs attention (4)")
@@ -242,6 +244,10 @@ func (c *reportBuildpacks) reportBuildpacks(client *simpleClient, out io.Writer,
 				if len(bps) == 0 {
 					if app.Entity.Buildpack != "" {
 						bps = append(bps, app.Entity.Buildpack)
+					} else {
+						if app.Entity.DetectedBuildpack != "" {
+							bps = append(bps, app.Entity.DetectedBuildpack)
+						}
 					}
 				}
 
